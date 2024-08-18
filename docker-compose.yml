@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: orders_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  order-service:
+    build: ./OrderService
+    container_name: order-service
+    ports:
+      - "5001:80"
+    environment:
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=orders_db;user=user;password=user_password
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - rabbitmq
+      - mysql
+
+  processing-service:
+    build: ./ProcessingService
+    container_name: processing-service
+    ports:
+      - "5002:80"
+    environment:
+      - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=orders_db;user=user;password=user_password
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - rabbitmq
+      - mysql
+
+volumes:
+  db_data:

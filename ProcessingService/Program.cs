@@ -60,4 +60,33 @@ consumer.Received += (model, ea) =>
     using var sqlConnection = new MySqlConnection(connectionString);
     sqlConnection.Open();
 
-    var query = "INSERT INTO Orders (ID, ProductType, Address) VALUES (@ID, @
+    var query = "INSERT INTO Orders (ID, ProductType, Address) VALUES (@ID, @ProductType, @Address)";
+    using var cmd = new MySqlCommand(query, sqlConnection);
+    cmd.Parameters.AddWithValue("@ID", order.ID);
+    cmd.Parameters.AddWithValue("@ProductType", order.ProductType);
+    cmd.Parameters.AddWithValue("@Address", order.Address);
+    cmd.ExecuteNonQuery();
+
+};
+
+channel.BasicConsume(queue: "orderQueue",
+                     autoAck: true,
+                     consumer: consumer);
+
+app.Run();
+
+record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+{
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+}
+
+namespace OrderService.Model{
+public class Order
+{
+    public int ID { get; set; }
+    public required string ProductType { get; set; }
+    public DateTime Date { get; set; }
+    
+    public required string Address { get; set; }
+}
+}
